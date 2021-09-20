@@ -1,5 +1,7 @@
 package main
 
+// TODO: logging (of any kind)
+
 import (
 	"bytes"
 	"encoding/binary"
@@ -10,6 +12,7 @@ import (
 	"t1/packets"
 )
 
+// Main loop for handling incoming connections
 func main() {
 	fmt.Println("Starting server")
 	listener, _ := net.ListenTCP("tcp", &net.TCPAddr{Port: 9999})
@@ -26,6 +29,7 @@ func main() {
 	}
 }
 
+// Read data from a connection into a buffer and pass it into the packet builder
 func processorRoutine(conn *net.TCPConn) {
 	fmt.Println("Received connection from " + conn.RemoteAddr().String())
 	defer conn.Close()
@@ -48,6 +52,7 @@ func processorRoutine(conn *net.TCPConn) {
 	}
 }
 
+// Take a byte buffer and coerce it into generic packet for processing
 func ReadPacket(r *bytes.Buffer) (packets.BNCSGeneric, error) {
 	check := make([]byte, 4)
 	_, err := r.Read(check)
