@@ -3,42 +3,93 @@ package packets
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/gob"
 	"fmt"
+	"log"
 	"reflect"
 )
 
-type BNCSGeneric struct {
+type BNCSBase struct {
 	Marker uint8
 	ID     uint8
 	Length uint16
-	Data   []byte
+}
+
+type BNCSGeneric struct {
+	BNCSBase
+	Data []byte
 }
 
 var index int = 0
 
-func (d BNCSGeneric) String() string {
+func (d BNCSBase) String() string {
 	return fmt.Sprintf("%x:%x:%x -> %d", d.Marker, d.ID, d.Length, d.Length)
 }
 
-// Convert a BNCSGeneric struct into a slice of bytes. Useful for sending packets
-// as well as debugging with hex.Dump()
-func (d BNCSGeneric) ToBytes() []byte {
+// Traverse a thing and get it back as a byte slice
+// Technically works on basically anything, but mostly useful for converting packets between
+// BNCSGeneric and a specific struct. Also for dumping to logs
+func GetBytes(d interface{}) []byte {
 	buf := new(bytes.Buffer)
 
-	v := reflect.ValueOf(d)
-	values := make([]interface{}, v.NumField())
-	for i := 0; i < v.NumField(); i++ {
-		fmt.Println("Extracting:", v.Field(i).Type().Name())
-		values[i] = v.Field(i).Interface()
-	}
+	dv := reflect.ValueOf(d)
 
-	for _, v := range values {
-		err := binary.Write(buf, binary.LittleEndian, v)
-		if err != nil {
-			fmt.Println("binary.Write failed:", err)
+	values := make([]interface{}, dv.NumField())
+	for i := range values {
+		values[i] = dv.Field(i).Interface()
+		switch dv.Field(i).Kind() {
+		case reflect.Slice:
+			slice_data := reflect.ValueOf(dv.Field(i).Interface()).Interface()
+			err := binary.Write(buf, binary.LittleEndian, slice_data)
+			if err != nil {
+				log.Println("binary.Write failed:", err)
+			}
+		case reflect.Struct:
+			struct_data := GetBytes(dv.Field(i).Interface())
+			err := binary.Write(buf, binary.LittleEndian, struct_data)
+			if err != nil {
+				log.Println("binary.Write failed:", err)
+			}
+		case reflect.String:
+			var buf2 bytes.Buffer
+			enc := gob.NewEncoder(&buf2)
+			err := enc.Encode(dv.Field(i).Interface())
+			if err != nil {
+				log.Println("failed to encode string as bytes")
+			}
+
+			bs := buf2.Bytes()
+			if bs[len(bs)-1] != 0x00 {
+				bs = append(bs, 0x00)
+			}
+			err = binary.Write(buf, binary.LittleEndian, bs)
+			if err != nil {
+				log.Println("binary.Write failed:", err)
+			}
+		case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			err := binary.Write(buf, binary.LittleEndian, dv.Field(i).Interface())
+			if err != nil {
+				log.Println("binary.Write failed:", err)
+			}
+
+		default:
+			log.Println("failed to convert field: ", dv.Type().Field(i).Name, dv.Field(i).Kind())
 		}
 	}
+
 	return buf.Bytes()
+}
+
+func (d *BNCSGeneric) ResetSeek() {
+	index = 0
+}
+
+func (d *BNCSGeneric) SetSeek(position int) {
+	index = position
+}
+
+func (d *BNCSGeneric) GetSeex() int {
+	return index
 }
 
 func (d *BNCSGeneric) SetLength() {
@@ -81,6 +132,34 @@ func (d *BNCSGeneric) WriteUint32(val uint32) {
 	b := make([]byte, 4)
 	binary.LittleEndian.PutUint32(b, val)
 	d.Data = append(d.Data, b...)
+}
+
+// BNCS is jank like this
+func (d *BNCSGeneric) WriteUint32String(val string) {
+	if len(val) > 4 {
+		val = val[0:4]
+	}
+	b := make([]byte, 0)
+	b = append(b, []byte(val)...)
+	conv := binary.LittleEndian.Uint32(b)
+	d.WriteUint32(conv)
+}
+
+// more jank for writing to general uint32s
+func WriteUint32String(val string) uint32 {
+	if len(val) > 4 {
+		val = val[0:4]
+	}
+	b := make([]byte, 0)
+	b = append(b, []byte(val)...)
+	return binary.BigEndian.Uint32(b)
+}
+
+func (d *BNCSGeneric) ReadUint32String() string {
+	raw := d.ReadUint32()
+	b := make([]byte, 4)
+	binary.LittleEndian.PutUint32(b, raw)
+	return string(b)
 }
 
 func (d *BNCSGeneric) ReadUint64() uint64 {

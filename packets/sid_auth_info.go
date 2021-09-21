@@ -1,21 +1,34 @@
 package packets
 
 import (
-	"bytes"
-	"encoding/binary"
+	"encoding/hex"
 	"fmt"
-	"reflect"
+	"log"
 )
 
 const LOGON_XSHA1 uint8 = 0x00
 const LOGON_NLS1 uint8 = 0x01
 const LOGON_NLS2 uint8 = 0x02
 
-type BNCS_SID_AUTH_INFO struct {
-	Marker          uint8
-	ID              uint8
-	Length          uint16
-	Data            []byte
+// Definition of the SID_AUTH that a client will send to the server
+type BNCS_CLIENT_SID_AUTH_INFO struct {
+	BNCSBase
+	ProtocolID     uint32 // only ever 0x00
+	PlatformCode   uint32
+	ProductCode    uint32
+	Version        uint32
+	LanguageCode   uint32
+	LocalIP        uint32
+	TimeZoneBias   uint32
+	MPQLocaleID    uint32
+	UserLanguageID uint32
+	CountryAbbr    string
+	Country        string
+}
+
+// Definition of the SID_AUTH packet that the server will respond with
+type BNCS_SERVER_SID_AUTH_INFO struct {
+	BNCSBase
 	LogonType       uint32
 	ServerToken     uint32
 	UDPValue        uint32
@@ -25,35 +38,32 @@ type BNCS_SID_AUTH_INFO struct {
 	ServerSignature [128]byte // WAR3/W3XP only
 }
 
-func (d BNCS_SID_AUTH_INFO) String() string {
+func (d BNCS_SERVER_SID_AUTH_INFO) String() string {
 	return fmt.Sprintf("%x:%x:%x -> %d", d.Marker, d.ID, d.Length, d.Length)
 }
 
-// Convert a BNCSGeneric struct into a slice of bytes. Useful for sending packets
-// as well as debugging with hex.Dump()
-func (d BNCS_SID_AUTH_INFO) ToBytes() []byte {
-	buf := new(bytes.Buffer)
+func (d *BNCS_SERVER_SID_AUTH_INFO) CoerceFrom(packet BNCSGeneric) {
+	d.Marker = packet.Marker
+	d.ID = packet.ID
+	d.Length = packet.Length
+	d.LogonType = packet.ReadUint32()
+	d.ServerToken = packet.ReadUint32()
+	d.UDPValue = packet.ReadUint32()
+	d.CR_MPQ_Filetime = packet.ReadUint64()
+	d.CR_MPQ_Filename = packet.ReadString()
+	d.CR_Formula = packet.ReadString()
 
-	v := reflect.ValueOf(d)
-	values := make([]interface{}, v.NumField())
-	for i := 0; i < v.NumField(); i++ {
-		values[i] = v.Field(i).Interface()
-	}
-
-	for _, v := range values {
-		err := binary.Write(buf, binary.LittleEndian, v)
-		if err != nil {
-			fmt.Println("binary.Write failed:", err)
-		}
-	}
-	return buf.Bytes()
+	log.Println("Received SID_AUTH_INFO\n", hex.Dump(GetBytes(packet)))
 }
 
-func (d BNCSGeneric) CoerceFrom() BNCS_SID_AUTH_INFO {
-	auth_info := BNCS_SID_AUTH_INFO{}
-	auth_info.Marker = d.Marker
-	auth_info.ID = d.ID
-	auth_info.Length = d.Length
+func (d *BNCS_CLIENT_SID_AUTH_INFO) From(p BNCSGeneric) {
+	// placeholder
+}
 
-	return auth_info
+// Process a SID_AUTH packet from the client, construct a response, and return it
+func (d BNCS_CLIENT_SID_AUTH_INFO) Process() (BNCSGeneric, error) {
+	if CLIENT_CONFIG[d.ProductCode]["supported"] == 0x0 {
+		return BNCSGeneric{}, fmt.Errorf("game %x configured unsupported", d.ProductCode)
+	}
+	return BNCSGeneric{}, nil
 }
