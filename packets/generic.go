@@ -83,7 +83,7 @@ func (d *BNCSGeneric) SetSeek(position int) {
 	index = position
 }
 
-func (d *BNCSGeneric) GetSeex() int {
+func (d *BNCSGeneric) GetSeek() int {
 	return index
 }
 
