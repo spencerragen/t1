@@ -56,8 +56,11 @@ func processorRoutine(conn *net.TCPConn) {
 		log.Println("[!] error reading from stream:", err.Error())
 		return
 	}
+
+	// this is bad, as protocol packets can be split over many tcp packets, and protocol
+	// packets can be crammed together in single tcp packets.
 	localBuffer.Write(readBuf[:dataLen])
-	packet, err := ReadPacket(localBuffer)
+	packet, err := ReadPacket(localBuffer) // getting segfault here now, yay
 	if err != nil {
 		log.Println("[!] error forming packet:", err.Error())
 		return
@@ -94,5 +97,6 @@ func ReadPacket(r *bytes.Buffer) (packets.BNCSGeneric, error) {
 	ret.Length = uint16(packetsize)
 	ret.Data = packetbuffer
 	log.Println("Packet received:\n", hex.Dump(packets.GetBytes(ret)))
+
 	return ret, nil
 }

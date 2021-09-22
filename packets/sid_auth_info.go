@@ -42,10 +42,13 @@ func (d BNCS_SERVER_SID_AUTH_INFO) String() string {
 	return fmt.Sprintf("%x:%x:%x -> %d", d.Marker, d.ID, d.Length, d.Length)
 }
 
-func (d *BNCS_SERVER_SID_AUTH_INFO) CoerceFrom(packet BNCSGeneric) {
+func (d *BNCS_SERVER_SID_AUTH_INFO) From(packet BNCSGeneric) {
+	// always
 	d.Marker = packet.Marker
 	d.ID = packet.ID
 	d.Length = packet.Length
+
+	// specific
 	d.LogonType = packet.ReadUint32()
 	d.ServerToken = packet.ReadUint32()
 	d.UDPValue = packet.ReadUint32()
@@ -57,7 +60,23 @@ func (d *BNCS_SERVER_SID_AUTH_INFO) CoerceFrom(packet BNCSGeneric) {
 }
 
 func (d *BNCS_CLIENT_SID_AUTH_INFO) From(p BNCSGeneric) {
-	// placeholder
+	// always
+	d.Marker = p.Marker
+	d.ID = p.ID
+	d.Length = p.Length
+
+	// specific
+	d.ProtocolID = p.ReadUint32()
+	d.PlatformCode = p.ReadUint32()
+	d.ProductCode = p.ReadUint32()
+	d.Version = p.ReadUint32()
+	d.LanguageCode = p.ReadUint32()
+	d.LocalIP = p.ReadUint32()
+	d.TimeZoneBias = p.ReadUint32()
+	d.MPQLocaleID = p.ReadUint32()
+	d.UserLanguageID = p.ReadUint32()
+	d.CountryAbbr = p.ReadString()
+	d.Country = p.ReadString()
 }
 
 // Process a SID_AUTH packet from the client, construct a response, and return it
