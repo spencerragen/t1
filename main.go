@@ -60,7 +60,7 @@ func processorRoutine(conn *net.TCPConn) {
 	// this is bad, as protocol packets can be split over many tcp packets, and protocol
 	// packets can be crammed together in single tcp packets.
 	localBuffer.Write(readBuf[:dataLen])
-	packet, err := ReadPacket(localBuffer) // getting segfault here now, yay
+	packet, err := ReadPacket(localBuffer)
 	if err != nil {
 		log.Println("[!] error forming packet:", err.Error())
 		return
