@@ -6,6 +6,7 @@ import (
 	"strings"
 	"t1/logging"
 	"t1/packets"
+	"t1/utils"
 )
 
 const (
@@ -13,7 +14,7 @@ const (
 )
 
 func validatePacketSize(conn *net.TCPConn, packet packets.BNCSGeneric) bool {
-	data := packets.GetBytes(packet)
+	data := utils.GetBytes(packet)
 	if uint16(len(data)) != packet.Length {
 		logging.Errorln("client", conn.RemoteAddr().String(), " - packet size mismatch: ", len(data), packet.Length)
 		conn.Close()

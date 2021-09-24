@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"t1/logging"
+	"t1/utils"
 )
 
 type BNCS_SERVER_SID_MESSAGEBOX struct {
@@ -29,9 +30,9 @@ func SendMessageBox(conn *net.TCPConn, text string, caption string) {
 	p.Text = text
 	p.Caption = caption
 
-	logging.Infoln("Sending SID_MESSAGEBOX\n", hex.Dump(GetBytes(p)))
+	logging.Infoln("Sending SID_MESSAGEBOX\n", hex.Dump(utils.GetBytes(p)))
 
-	_, err := conn.Write(GetBytes(p))
+	_, err := conn.Write(utils.GetBytes(p))
 	if err != nil {
 		logging.Errorln("failed to write SID_MESSAGEBOX to client", conn.RemoteAddr().String(), ":", err.Error())
 		conn.Close()
