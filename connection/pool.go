@@ -21,10 +21,8 @@ func (pool *Pool) Start() {
 		select {
 		case client := <-pool.Register:
 			pool.Clients[client] = true
-			// break
 		case client := <-pool.Unregister:
 			delete(pool.Clients, client)
-			// break
 		}
 	}
 }

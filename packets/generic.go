@@ -10,7 +10,12 @@ import (
 )
 
 type BNCSBase struct {
-	Marker uint8
+	seek_index int `default:"0"`
+	BNCSHeader
+}
+
+type BNCSHeader struct {
+	Marker uint8 `default:"uint8(0xff)"`
 	ID     uint8
 	Length uint16
 }
@@ -19,8 +24,6 @@ type BNCSGeneric struct {
 	BNCSBase
 	Data []byte
 }
-
-var index int = 0
 
 func (d BNCSBase) String() string {
 	return fmt.Sprintf("%x:%x:%x -> %d", d.Marker, d.ID, d.Length, d.Length)
@@ -37,7 +40,12 @@ func GetBytes(d interface{}) []byte {
 
 	values := make([]interface{}, dv.NumField())
 	for i := range values {
+		if !dv.Field(i).CanInterface() {
+			logging.Debugf("Field %d is unexported, skipping", i)
+			continue
+		}
 		values[i] = dv.Field(i).Interface()
+
 		switch dv.Field(i).Kind() {
 		case reflect.Slice:
 			slice_data := reflect.ValueOf(dv.Field(i).Interface()).Interface()
@@ -79,15 +87,15 @@ func GetBytes(d interface{}) []byte {
 }
 
 func (d *BNCSGeneric) ResetSeek() {
-	index = 0
+	d.seek_index = 0
 }
 
 func (d *BNCSGeneric) SetSeek(position int) {
-	index = position
+	d.seek_index = position
 }
 
 func (d *BNCSGeneric) GetSeek() int {
-	return index
+	return d.seek_index
 }
 
 func (d *BNCSGeneric) SetLength() {
@@ -99,8 +107,8 @@ func (d *BNCSGeneric) WriteBytes(val []byte) {
 }
 
 func (d *BNCSGeneric) ReadUint8() uint8 {
-	val := uint8(d.Data[index])
-	index += 1
+	val := uint8(d.Data[d.seek_index])
+	d.seek_index += 1
 	return val
 }
 
@@ -109,8 +117,8 @@ func (d *BNCSGeneric) WriteUint8(val uint8) {
 }
 
 func (d *BNCSGeneric) ReadUint16() uint16 {
-	val := uint16(binary.LittleEndian.Uint16(d.Data[index : index+2]))
-	index += 2
+	val := uint16(binary.LittleEndian.Uint16(d.Data[d.seek_index : d.seek_index+2]))
+	d.seek_index += 2
 	return val
 }
 
@@ -121,8 +129,8 @@ func (d *BNCSGeneric) WriteUint16(val uint16) {
 }
 
 func (d *BNCSGeneric) ReadUint32() uint32 {
-	val := uint32(binary.LittleEndian.Uint32(d.Data[index : index+4]))
-	index += 4
+	val := uint32(binary.LittleEndian.Uint32(d.Data[d.seek_index : d.seek_index+4]))
+	d.seek_index += 4
 	return val
 }
 
@@ -161,8 +169,8 @@ func (d *BNCSGeneric) ReadUint32String() string {
 }
 
 func (d *BNCSGeneric) ReadUint64() uint64 {
-	val := uint64(binary.LittleEndian.Uint64(d.Data[index : index+8]))
-	index += 8
+	val := uint64(binary.LittleEndian.Uint64(d.Data[d.seek_index : d.seek_index+8]))
+	d.seek_index += 8
 	return val
 }
 
@@ -175,10 +183,10 @@ func (d *BNCSGeneric) WriteUint64(val uint64) {
 func (d *BNCSGeneric) ReadString() string {
 	var ret string
 
-	for i := range d.Data[index:] {
-		if d.Data[index+i] == 0x00 {
-			ret = string(d.Data[index : index+i])
-			index += i + 1
+	for i := range d.Data[d.seek_index:] {
+		if d.Data[d.seek_index+i] == 0x00 {
+			ret = string(d.Data[d.seek_index : d.seek_index+i])
+			d.seek_index += i + 1
 			return ret
 		}
 	}

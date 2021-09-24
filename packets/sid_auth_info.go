@@ -101,8 +101,12 @@ func (d BNCS_CLIENT_SID_AUTH_INFO) Process() (BNCSGeneric, error) {
 		return BNCSGeneric{}, fmt.Errorf("platform 0x%x not permitted", d.PlatformCode)
 	}
 
-	if d.Version != CLIENT_CONFIG[d.Version]["version"] {
-		return BNCSGeneric{}, fmt.Errorf("version code 0x%x invalid", d.Version)
+	if d.Version != CLIENT_CONFIG[d.ProductCode]["version"] {
+		return BNCSGeneric{}, fmt.Errorf(
+			"version code 0x%x invalid (expected 0x%x)",
+			d.Version,
+			CLIENT_CONFIG[d.ProductCode]["version"],
+		)
 	}
 
 	return BNCSGeneric{}, nil
