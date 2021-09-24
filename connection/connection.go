@@ -5,23 +5,23 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"net"
 
 	"t1/dispatch"
+	"t1/logging"
 	"t1/packets"
 )
 
 // Read data from a connection into a buffer and pass it into the packet builder
 func ProcessorRoutine(conn *net.TCPConn) {
-	log.Println("Received connection from " + conn.RemoteAddr().String())
+	logging.Infoln("Received connection from " + conn.RemoteAddr().String())
 	defer conn.Close()
 
 	localBuffer := new(bytes.Buffer)
 	readBuf := make([]byte, 1024)
 	dataLen, err := conn.Read(readBuf)
 	if err != nil {
-		log.Println("[!] error reading from stream:", err.Error())
+		logging.Errorln("error reading from stream:", err.Error())
 		return
 	}
 
@@ -30,13 +30,13 @@ func ProcessorRoutine(conn *net.TCPConn) {
 	localBuffer.Write(readBuf[:dataLen])
 	packet, err := ReadPacket(localBuffer)
 	if err != nil {
-		log.Println("[!] error forming packet:", err.Error())
+		logging.Errorln("error forming packet:", err.Error())
 		return
 	}
 
 	d_err := dispatch.Dispatch(conn, packet)
 	if d_err != nil {
-		log.Println("[!] dispatch error:", d_err.Error())
+		logging.Errorln("dispatch error:", d_err.Error())
 		return
 	}
 }
@@ -64,7 +64,7 @@ func ReadPacket(r *bytes.Buffer) (packets.BNCSGeneric, error) {
 	ret.ID = check[1]
 	ret.Length = uint16(packetsize)
 	ret.Data = packetbuffer
-	log.Println("Packet received:\n", hex.Dump(packets.GetBytes(ret)))
+	logging.Infoln("Packet received:\n", hex.Dump(packets.GetBytes(ret)))
 
 	return ret, nil
 }

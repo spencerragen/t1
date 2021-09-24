@@ -5,8 +5,8 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
-	"log"
 	"reflect"
+	"t1/logging"
 )
 
 type BNCSBase struct {
@@ -52,7 +52,7 @@ func GetBytes(d interface{}) []byte {
 			enc := gob.NewEncoder(&buf2)
 			err = enc.Encode(dv.Field(i).Interface())
 			if err != nil {
-				log.Println("failed to encode string as bytes")
+				logging.Warningln("failed to encode string as bytes")
 				continue
 			}
 
@@ -67,10 +67,10 @@ func GetBytes(d interface{}) []byte {
 			err = binary.Write(buf, binary.LittleEndian, dv.Field(i).Interface())
 
 		default:
-			log.Println("failed to convert field: ", dv.Type().Field(i).Name, dv.Field(i).Kind())
+			logging.Warningln("failed to convert field: ", dv.Type().Field(i).Name, dv.Field(i).Kind())
 		}
 		if err != nil {
-			log.Println("binary.Write failed:", err)
+			logging.Errorln("binary.Write failed:", err)
 			err = nil
 		}
 	}

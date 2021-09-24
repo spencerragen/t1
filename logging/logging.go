@@ -10,6 +10,7 @@ import (
 const _ERROR_PREFIX string = "[ERROR] "
 const _DEBUG_PREFIX string = "[DEBUG] "
 const _INFO_PREFIX string = "[INFO] "
+const _WARNING_PREFIX string = "[WARNING] "
 
 func InitLogs() {
 	t := time.Now()
@@ -76,5 +77,20 @@ func Errorln(v ...interface{}) {
 
 func Errorf(format string, v ...interface{}) {
 	log.SetPrefix(_ERROR_PREFIX)
+	log.Printf(format, v...)
+}
+
+func Warning(v ...interface{}) {
+	log.SetPrefix(_WARNING_PREFIX)
+	log.Print(v...)
+}
+
+func Warningln(v ...interface{}) {
+	log.SetPrefix(_WARNING_PREFIX)
+	log.Println(v...)
+}
+
+func Warningf(format string, v ...interface{}) {
+	log.SetPrefix(_WARNING_PREFIX)
 	log.Printf(format, v...)
 }

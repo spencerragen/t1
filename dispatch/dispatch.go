@@ -2,9 +2,9 @@ package dispatch
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"strings"
+	"t1/logging"
 	"t1/packets"
 )
 
@@ -15,7 +15,7 @@ const (
 func validatePacketSize(conn *net.TCPConn, packet packets.BNCSGeneric) bool {
 	data := packets.GetBytes(packet)
 	if uint16(len(data)) != packet.Length {
-		log.Println("[*] client", conn.RemoteAddr().String(), " - packet size mismatch: ", len(data), packet.Length)
+		logging.Errorln("client", conn.RemoteAddr().String(), " - packet size mismatch: ", len(data), packet.Length)
 		conn.Close()
 		return false
 	}
@@ -25,12 +25,12 @@ func validatePacketSize(conn *net.TCPConn, packet packets.BNCSGeneric) bool {
 
 func Dispatch(conn *net.TCPConn, packet packets.BNCSGeneric) error {
 	if !validatePacketSize(conn, packet) {
-		log.Println("[*] client", conn.RemoteAddr().String(), "connection terminated")
+		logging.Errorln("client", conn.RemoteAddr().String(), "connection terminated")
 		return nil
 	}
 	switch packet.ID {
 	case SID_AUTH_INFO:
-		log.Println("received SID_AUTH_INFO")
+		logging.Infoln("received SID_AUTH_INFO")
 		p := packets.BNCS_CLIENT_SID_AUTH_INFO{}
 		p.From(packet)
 
