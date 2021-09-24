@@ -36,3 +36,13 @@ const (
 	SID_PING       = uint8(0x25)
 	SID_AUTH_INFO  = uint8(0x50)
 )
+
+const (
+	DEF_PROTOCOL_ID = uint32(0x00)
+)
+
+var DEF_ALLOWED_PLATFORMS = []uint32{
+	uint32(0x36385849), // IX86
+	uint32(0x43414d50), // PMAC
+	uint32(0x43414d58), // XMAC
+}

@@ -3,7 +3,8 @@ package packets
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
+
+	"t1/logging"
 )
 
 const LOGON_XSHA1 uint8 = 0x00
@@ -56,7 +57,7 @@ func (d *BNCS_SERVER_SID_AUTH_INFO) From(packet BNCSGeneric) {
 	d.CR_MPQ_Filename = packet.ReadString()
 	d.CR_Formula = packet.ReadString()
 
-	log.Println("Received SID_AUTH_INFO\n", hex.Dump(GetBytes(packet)))
+	logging.Infoln("Received SID_AUTH_INFO\n", hex.Dump(GetBytes(packet)))
 }
 
 func (d *BNCS_CLIENT_SID_AUTH_INFO) From(p BNCSGeneric) {
@@ -79,10 +80,30 @@ func (d *BNCS_CLIENT_SID_AUTH_INFO) From(p BNCSGeneric) {
 	d.Country = p.ReadString()
 }
 
-// Process a SID_AUTH packet from the client, construct a response, and return it
+// Process a SID_AUTH packet from the client, co nstruct a response, and return it
 func (d BNCS_CLIENT_SID_AUTH_INFO) Process() (BNCSGeneric, error) {
 	if CLIENT_CONFIG[d.ProductCode]["supported"] == 0x0 {
-		return BNCSGeneric{}, fmt.Errorf("game %x configured unsupported", d.ProductCode)
+		return BNCSGeneric{}, fmt.Errorf("game 0x%x configured unsupported", d.ProductCode)
 	}
+
+	if d.ProtocolID != DEF_PROTOCOL_ID {
+		return BNCSGeneric{}, fmt.Errorf("protocol ID 0x%x is invalid", d.ProtocolID)
+	}
+
+	found := false
+	for _, v := range DEF_ALLOWED_PLATFORMS {
+		if d.PlatformCode == v {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return BNCSGeneric{}, fmt.Errorf("platform 0x%x not permitted", d.PlatformCode)
+	}
+
+	if d.Version != CLIENT_CONFIG[d.Version]["version"] {
+		return BNCSGeneric{}, fmt.Errorf("version code 0x%x invalid", d.Version)
+	}
+
 	return BNCSGeneric{}, nil
 }

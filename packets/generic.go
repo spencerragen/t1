@@ -42,9 +42,11 @@ func GetBytes(d interface{}) []byte {
 		case reflect.Slice:
 			slice_data := reflect.ValueOf(dv.Field(i).Interface()).Interface()
 			err = binary.Write(buf, binary.LittleEndian, slice_data)
+
 		case reflect.Struct:
 			struct_data := GetBytes(dv.Field(i).Interface())
 			err = binary.Write(buf, binary.LittleEndian, struct_data)
+
 		case reflect.String:
 			var buf2 bytes.Buffer
 			enc := gob.NewEncoder(&buf2)
@@ -60,6 +62,7 @@ func GetBytes(d interface{}) []byte {
 				bs = append(bs, 0x00)
 			}
 			err = binary.Write(buf, binary.LittleEndian, bs)
+
 		case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			err = binary.Write(buf, binary.LittleEndian, dv.Field(i).Interface())
 
