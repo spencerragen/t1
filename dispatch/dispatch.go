@@ -39,7 +39,6 @@ func Dispatch(conn *net.TCPConn, packet packets.BNCSGeneric) error {
 			if strings.Contains(err.Error(), "configured unsupported") {
 				packets.SendMessageBox(conn, "Client is unsupported", "Error")
 			}
-			conn.Close()
 			return fmt.Errorf("invalid SID_AUTH_INFO: %v", err.Error())
 		}
 		send_response(conn, response)

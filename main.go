@@ -3,7 +3,6 @@ package main
 // TODO: make logging not suck
 
 import (
-	"log"
 	"net"
 
 	"t1/connection"
@@ -13,17 +12,22 @@ import (
 // Main loop for handling incoming connections
 func main() {
 	logging.InitLogs()
-	log.Println("Starting server")
+	logging.Infoln("Starting server")
+	pool := connection.NewPool()
+	go pool.Start()
 	listener, _ := net.ListenTCP("tcp", &net.TCPAddr{Port: 9999})
 
 	for {
 		conn, err := listener.AcceptTCP()
-
 		if err != nil {
-			log.Println("Could not connect", err.Error())
+			logging.Errorln("Could not connect", err.Error())
 			continue
 		}
+		client := &connection.Client{
+			Conn: conn,
+			Pool: pool,
+		}
 
-		go connection.ProcessorRoutine(conn)
+		client.Read()
 	}
 }

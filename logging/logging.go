@@ -7,8 +7,9 @@ import (
 	"time"
 )
 
-const _INFO_PREFIX = "[*] "
-const _ERROR_PREFIX = "[!] "
+const _ERROR_PREFIX string = "[ERROR] "
+const _DEBUG_PREFIX string = "[DEBUG] "
+const _INFO_PREFIX string = "[INFO] "
 
 func InitLogs() {
 	t := time.Now()
@@ -18,44 +19,62 @@ func InitLogs() {
 	}
 	mw := io.MultiWriter(os.Stdout, logFile)
 	log.SetOutput(mw)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 }
 
 func Print(v ...interface{}) {
-	log.Print(v...)
+	Info(v...)
 }
 
 func Println(v ...interface{}) {
-	log.Println(v...)
+	Infoln(v...)
 }
 
 func Printf(format string, v ...interface{}) {
-	log.Printf(format, v...)
+	Infof(format, v...)
 }
 
 func Info(v ...interface{}) {
-	log.Print(_INFO_PREFIX)
+	log.SetPrefix(_INFO_PREFIX)
 	log.Print(v...)
 }
 
 func Infoln(v ...interface{}) {
-	log.Print(_INFO_PREFIX)
+	log.SetPrefix(_INFO_PREFIX)
 	log.Println(v...)
 }
 
 func Infof(format string, v ...interface{}) {
-	log.Print(_INFO_PREFIX)
+	log.SetPrefix(_INFO_PREFIX)
+	log.Printf(format, v...)
+}
+
+func Debug(v ...interface{}) {
+	log.SetPrefix(_DEBUG_PREFIX)
+	log.Print(v...)
+}
+
+func Debugln(v ...interface{}) {
+	log.SetPrefix(_DEBUG_PREFIX)
+	log.Println(v...)
+}
+
+func Debugf(format string, v ...interface{}) {
+	log.SetPrefix(_DEBUG_PREFIX)
+	log.Printf(format, v...)
 }
 
 func Error(v ...interface{}) {
-	log.Print(_ERROR_PREFIX)
+	log.SetPrefix(_ERROR_PREFIX)
 	log.Print(v...)
 }
 
 func Errorln(v ...interface{}) {
-	log.Print(_ERROR_PREFIX)
+	log.SetPrefix(_ERROR_PREFIX)
 	log.Println(v...)
 }
 
 func Errorf(format string, v ...interface{}) {
-	log.Print(_ERROR_PREFIX)
+	log.SetPrefix(_ERROR_PREFIX)
+	log.Printf(format, v...)
 }
