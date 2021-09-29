@@ -3,6 +3,7 @@ package packets
 import (
 	"encoding/hex"
 	"fmt"
+	"net"
 
 	"t1/logging"
 	"t1/utils"
@@ -81,8 +82,8 @@ func (d *BNCS_CLIENT_SID_AUTH_INFO) From(p BNCSGeneric) {
 	d.Country = p.ReadString()
 }
 
-// Process a SID_AUTH packet from the client, co nstruct a response, and return it
-func (d BNCS_CLIENT_SID_AUTH_INFO) Process() (BNCSGeneric, error) {
+// Process a SID_AUTH packet from the client, construct a response, and return it
+func (d BNCS_CLIENT_SID_AUTH_INFO) Process(setLocalIp *string) (BNCSGeneric, error) {
 	if CLIENT_CONFIG[d.ProductCode]["supported"] == 0x0 {
 		return BNCSGeneric{}, fmt.Errorf("game 0x%x configured unsupported", d.ProductCode)
 	}
@@ -109,6 +110,16 @@ func (d BNCS_CLIENT_SID_AUTH_INFO) Process() (BNCSGeneric, error) {
 			CLIENT_CONFIG[d.ProductCode]["version"],
 		)
 	}
+
+	// check the language code here?
+
+	ip_bytes := utils.Uint32ToBytes(d.LocalIP)
+	// I with there was variable unpacking in go
+	conv := net.IPv4(ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]).String()
+	setLocalIp = &conv
+
+	// there should be a check here but I don't feel like figuring out uint32 -> int16 right now
+	logging.Println("timezone bias: ", d.TimeZoneBias)
 
 	return BNCSGeneric{}, nil
 }

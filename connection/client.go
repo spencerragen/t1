@@ -3,22 +3,27 @@ package connection
 import (
 	"bytes"
 	"net"
-	"t1/dispatch"
 	"t1/logging"
 )
 
 type Client struct {
-	ID   string
-	Conn *net.TCPConn
-	Pool *Pool
+	ID          string
+	Conn        *net.TCPConn
+	Pool        *Pool
+	Channel     string
+	LocalIP     string
+	ServerToken uint32
+	// TZBias      int32 // signed? unsigned? who knows!
+}
+
+func (c *Client) Terminate() {
+	c.Pool.Unregister <- c
+	c.Conn.Close()
 }
 
 func (c *Client) Read() {
 	logging.Println("Received connection from " + c.Conn.RemoteAddr().String())
-	defer func() {
-		c.Pool.Unregister <- c
-		c.Conn.Close()
-	}()
+	defer c.Terminate()
 
 	localBuffer := new(bytes.Buffer)
 	readBuf := make([]byte, 1024)
@@ -37,10 +42,10 @@ func (c *Client) Read() {
 		return
 	}
 
-	d_err := dispatch.Dispatch(c.Conn, packet)
+	d_err := Dispatch(c, packet)
 	if d_err != nil {
 		logging.Errorln("dispatch error:", d_err.Error())
 		// logging.Infoln("remaining buffer:\n", hex.Dump(readBuf)) // end up being mostly nulls
-		c.Conn.Close()
+		c.Terminate()
 	}
 }

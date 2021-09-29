@@ -43,6 +43,6 @@ const (
 
 var DEF_ALLOWED_PLATFORMS = []uint32{
 	uint32(0x49583836), // IX86
-	uint32(0x584d4143), // XMAC
-	uint32(0x504d4143), // PMAC
+	// uint32(0x584d4143), // XMAC
+	// uint32(0x504d4143), // PMAC
 }
